@@ -207,15 +207,17 @@ button .icx,a .icx,.linkish .icx{vertical-align:-2px;margin-right:1px}
 .pill-s.s-red::before{background:var(--red)}
 .pill-s.has-dot::before{display:none}
 .flagpill{white-space:normal;align-items:flex-start;line-height:1.4;max-width:100%}
-.stamp-done{display:inline-flex;align-items:center;gap:4px;border:1px solid #1f8f6a;color:#fff;background:#1f8f6a;border-radius:6px;padding:3px 10px;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
-.stamp-done.abd{background:#eef2f6;color:var(--ink-2);border-color:var(--line)}
-.done-card{border-left:3px solid #1f8f6a;background:#f6fbf8}
+.stamp-done{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--deep);color:#fff;background:var(--deep);border-radius:6px;padding:3px 10px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.stamp-done.abd{background:transparent;color:var(--ink-2);border-color:var(--line-strong)}
+.done-card{background:var(--sky-100);border-color:var(--line-strong)}
 .done-card .tlink{color:var(--ink-2)}
-.done-check{width:22px;height:22px;border-radius:50%;background:#1f8f6a;color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.done-check{width:22px;height:22px;border-radius:50%;background:var(--deep);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 0 0 3px var(--sky-200)}
+.done-check.abd{background:transparent;color:var(--ink-2);border:1.5px solid var(--line-strong);box-shadow:none}
+.done-when{color:var(--deep);font-weight:700}
 .done-note{font-size:12.5px;color:var(--ink-2);margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
 .done-band{margin:16px 0 8px}
-.proj-done{display:flex;align-items:center;gap:12px;background:#f6fbf8;border:1px solid #bfe5d3;border-left:4px solid #1f8f6a;border-radius:10px;padding:10px 14px;margin-bottom:14px}
-.proj-done b{color:#137a50}
+.proj-done{display:flex;align-items:center;gap:12px;background:var(--sky-100);border:1px solid var(--line-strong);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.proj-done b{color:var(--deep)}
 .stamp-done.abd{border-color:var(--grey);color:#54697d;background:var(--grey-bg)}
 .proj-done{opacity:.72}
 .proj-active{border:2px solid transparent;border-radius:14px;background:linear-gradient(var(--panel),var(--panel)) padding-box,linear-gradient(120deg,#ffd23f,#f5c518,#fff0b3,#f5c518,#ffd23f) border-box;box-shadow:0 6px 22px rgba(245,197,24,.16);animation:activeGlow 3.2s ease-in-out infinite}
@@ -965,7 +967,7 @@ select.inp.acc-sel{width:auto;flex:0 0 auto;padding:4px 26px 4px 8px;font-size:1
 .fb-btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:650;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .fb-btn:hover{border-color:#8b7cf6;color:var(--deep)}
 .fb-btn.on{background:var(--deep);color:#fff;border-color:var(--deep)}
-.fb-btn.on.good{background:#1f8f6a;border-color:#1f8f6a}.fb-btn.on.off{background:#b23a2f;border-color:#b23a2f}
+.fb-btn.on.good{background:var(--deep);border-color:var(--deep)}.fb-btn.on.off{background:#b23a2f;border-color:#b23a2f}
 .teach{margin-top:8px;border:1px solid #d9d4fb;border-radius:12px;padding:10px 12px;background:linear-gradient(135deg,#f6fbfb,#f5f3ff)}
 .take-note{display:flex;gap:6px;align-items:flex-start;margin-top:8px;font-size:12.5px;color:var(--ink-2);background:#f5f3ff;border-radius:8px;padding:6px 10px;overflow-wrap:anywhere}
 .take-note svg{flex:0 0 auto;margin-top:2px;stroke:#6d5ef0}
@@ -1079,7 +1081,7 @@ window.addEventListener('appinstalled', ()=>{ window.__installed=true; window.__
 if('serviceWorker' in navigator && location.protocol==='https:' && !/localhost|127\.0\.0\.1/.test(location.hostname)){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 /* Local storage keys are namespaced by Firebase project, so two editions on one domain (live and demo) never share a cache. */
 const LS_NS=(typeof FIREBASE_CONFIG==='object'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.projectId)? FIREBASE_CONFIG.projectId : 'local';
-const BUILD='2026-09-17-1841';
+const BUILD='2026-09-17-1939';
 const WS_DEFAULTS={
   name:'', owners:[], allowedDomain:'', idleHours:8,
   checkins:{enabled:true, stalled:true},       /* weekly check-ins on active projects; a missing one counts as stalled */
@@ -1141,7 +1143,7 @@ function ownersMap(meta){ const m={}; wsEff(meta).owners.forEach(e=>{ m[emailKey
 /* A person may sign in if listed, or if their email is on the workspace's domain. */
 function emailAllowed(meta, email){ const e=String(email||'').toLowerCase(); if(!e) return false; if(isOwnerEmail(e)) return true;
   const blocked=(meta&&meta.blockedEmails||[]).map(x=>String(x).toLowerCase()); if(blocked.indexOf(e)>-1) return false;
-  if(effectiveAllowed(meta).indexOf(e)>-1) return true; const d=String(wsEff(meta).allowedDomain||'').toLowerCase().replace(/^@/,''); return !!d && e.endsWith('@'+d); }
+  if(effectiveAllowed(meta).indexOf(e)>-1) return true; if(((meta&&meta.workspace)||{}).openDemo===true) return true; const d=String(wsEff(meta).allowedDomain||'').toLowerCase().replace(/^@/,''); return !!d && e.endsWith('@'+d); }
 function allAllowedEmails(meta){ const base=ALLOWED_EMAILS.map(x=>String(x).toLowerCase()); const extra=emailsArr(meta).map(x=>String(x).toLowerCase()); return Array.from(new Set([...base, ...extra])); }
 
 /* ---------------- helpers ---------------- */
@@ -2485,7 +2487,8 @@ function useGtm(){
   const clip=(t)=>{ const x=String(t||''); return x.length>140? x.slice(0,137)+'\u2026' : x; };
   const PROJ_AFIELDS=[['name','name'],['ownerId','owner'],['status','status'],['health','health'],['queue','queue'],['dueDate','due date'],['effort','LOE'],['impact','impact'],['okrIds','objectives'],['scIds','success criteria'],['details','description'],['docUrl','doc link'],['blocker','blocker'],['completionNote','completion note']];
   const TASK_AFIELDS=[['title','title'],['ownerIds','owners'],['status','status'],['dueDate','due date'],['projectIds','projects'],['blocker','blocker'],['completionNote','completion note']];
-  const OKR_AFIELDS=[['theme','name'],['objective','vision narrative'],['ownerId','owner'],['baseline','baseline'],['timeframe','timeframe'],['archived','archived']];
+  const OKR_STATUS_LABEL={active:'Active',done:'Completed',abandoned:'Abandoned'};
+const OKR_AFIELDS=[['theme','name'],['objective','vision narrative'],['ownerId','owner'],['baseline','baseline'],['timeframe','timeframe'],['archived','archived']];
   const scDiff=(a,b)=>{
     const out=[]; const am={}; (a||[]).forEach(c=>{ if(c&&c.id) am[c.id]=c; });
     const seen=new Set(); const S=(v)=>v==null?'':String(v);
@@ -2529,6 +2532,7 @@ function useGtm(){
     },
     saveOkr:(o)=>{
       const out=o.id?{...o}:{...o,id:uid('o'),createdAt:nowISO()};
+      out.status=out.status||'active'; if(out.status!=='active' && !out.doneAt) out.doneAt=nowISO(); if(out.status==='active' && out.doneAt) out.doneAt=null;
       const prev=o.id?maps.okr[o.id]:null;
       if(!prev) logAct('created','objective',out.id,okrName(out));
       else { const ch=[...diffAct(prev,out,OKR_AFIELDS), ...scDiff(prev.successCriteria,out.successCriteria)]; if(ch.length) logAct('updated','objective',out.id,okrName(out),ch); }
@@ -2969,6 +2973,18 @@ function ScEditor({items,onChange}){
       React.createElement('input',{className:'inp',value:c.text,placeholder:'What does success look like?',onChange:e=>{const n=[...list];n[i]={...n[i],text:e.target.value};onChange(n);}}),
       React.createElement('button',{className:'btn icon',title:'Remove criterion',onClick:()=>onChange(list.filter((_,j)=>j!==i))},'\u00d7'))),
     React.createElement('button',{className:'btn sm ghost',onClick:()=>onChange([...list,{id:uid('sc'),text:''}])},'+ Add success criterion'));
+}
+/* Completing an objective: record where each criterion landed and a note on the outcome. */
+function OkrCompleteModal({okr,onClose,onSave}){
+  const [note,setNote]=useState(okr.completionNote||''); const [status,setStatus]=useState('done');
+  const [crit,setCrit]=useState(()=>(okr.successCriteria||[]).map(c=>({...c})));
+  const up=(i,v)=>{ const n=crit.slice(); n[i]=Object.assign({},n[i],{now:v}); setCrit(n); };
+  return React.createElement(Modal,{title:'Complete objective',onClose,wide:true,
+    footer:[React.createElement('button',{key:'c',className:'btn',onClick:onClose},'Cancel'), React.createElement('button',{key:'s',className:'btn primary',disabled:!note.trim(),onClick:()=>onSave({status,completionNote:note.trim(),successCriteria:crit,doneAt:nowISO()})}, status==='done'?'Mark complete':'Mark abandoned')]},
+    React.createElement('div',{style:{fontWeight:700,marginBottom:10}}, okr.theme||okr.objective),
+    React.createElement(Field,{label:'Outcome'}, React.createElement('div',{className:'seg'}, React.createElement('button',{className:status==='done'?'on':'',onClick:()=>setStatus('done')},'Achieved'), React.createElement('button',{className:status==='abandoned'?'on':'',onClick:()=>setStatus('abandoned')},'Abandoned'))),
+    crit.length? React.createElement(Field,{label:'Where each success criterion landed'}, crit.map((c,i)=>React.createElement('div',{key:c.id||i,style:{display:'flex',gap:10,alignItems:'center',marginBottom:6}}, React.createElement('div',{style:{flex:1,fontSize:13}},c.text), React.createElement('span',{className:'tiny muted'},'target '+(c.target||'-')), React.createElement('input',{className:'inp',style:{width:110},placeholder:'result',value:c.now||'',onChange:e=>up(i,e.target.value)})))) : null,
+    React.createElement(Field,{label:'Completion note'}, React.createElement('textarea',{className:'inp',rows:4,value:note,placeholder:'What was achieved, what was not, and what it means for what comes next.',onChange:e=>setNote(e.target.value)})));
 }
 function OkrForm({initial,onSave,onClose,people}){
   const [f,setF]=useState(()=>Object.assign({num:'',theme:'',objective:'',baseline:'',ownerId:'',timeframe:'2026',successCriteria:[]}, initial||{}));
@@ -3444,7 +3460,7 @@ function ProjectDrawer({project}){
         false&&React.createElement(MetaRow,{k:'Impact / effort'}, React.createElement('span',{style:{display:'inline-flex',gap:6}}, project.impact?React.createElement('span',{className:'eichip'},'Impact ',React.createElement('b',null,project.impact)):React.createElement('span',{className:'muted tiny'},'no impact set'), project.effort?React.createElement('span',{className:'eichip'},'LOE ',React.createElement('b',null,project.effort)):null)),
         React.createElement(MetaRow,{k:'Last activity'}, React.createElement('span',{className:isStale(project.lastActivity,project.status)?'tag-due over':''}, relTime(project.lastActivity), isStale(project.lastActivity,project.status)?'  - stale':'')),
         React.createElement(MetaRow,{k:'Linked OKRs'}, React.createElement(InlineLinks,{ids:project.okrIds,
-          options:okrs.filter(o=>!o.archived).map(o=>({id:o.id,label:'O'+o.num+' '+o.theme})),
+          options:okrs.filter(o=>!o.archived&&(o.status||'active')==='active').map(o=>({id:o.id,label:'O'+o.num+' '+o.theme})),
           onSave:(v)=>A.saveProject({...project,okrIds:v}),
           renderOne:(o)=>{ const full=maps.okr[o.id];
             return React.createElement('span',{key:o.id,className:'chip-obj',title:full?full.objective:''},
@@ -3457,7 +3473,7 @@ function ProjectDrawer({project}){
         React.createElement('div',{className:'section-title'},'Project description'),
         project.docUrl && React.createElement('a',{href:(/^https?:\/\//i.test(project.docUrl)?project.docUrl:'https://'+project.docUrl),target:'_blank',rel:'noopener noreferrer',className:'btn sm',style:{marginBottom:project.details?10:0,display:'inline-flex'}}, iLabel('link','Open full description',13)),
         project.details && React.createElement('div',{style:{whiteSpace:'pre-wrap'}}, project.details)),
-      isClosedStatus(project.status) && React.createElement('div',{className:'proj-done'}, React.createElement('span',{className:'done-check'}, React.createElement(Icon,{name:project.status==='done'?'check':'x',size:13,strokeWidth:3})), React.createElement('div',null, React.createElement('b',null,(project.status==='done'?'Completed ':'Abandoned ')+fmtDate(project.doneAt||project.lastActivity)), project.completionNote? React.createElement('div',{className:'done-note'},project.completionNote) : null)),
+      isClosedStatus(project.status) && React.createElement('div',{className:'proj-done'}, React.createElement('span',{className:'done-check'+(project.status==='done'?'':' abd')}, React.createElement(Icon,{name:project.status==='done'?'check':'x',size:13,strokeWidth:3})), React.createElement('div',null, React.createElement('b',null,(project.status==='done'?'Completed ':'Abandoned ')+fmtDate(project.doneAt||project.lastActivity)), project.completionNote? React.createElement('div',{className:'done-note'},project.completionNote) : null)),
       React.createElement(CheckinBlock,{project}),
       React.createElement('div',{className:'spread'},
         React.createElement('div',{className:'section-title',style:{margin:0}}, 'Tasks ('+tasks.length+')'),
@@ -3476,11 +3492,11 @@ function ProjectDrawer({project}){
             checked:!!tsel[t.id],onClick:e=>e.stopPropagation(),
             onChange:()=>setTsel(s=>Object.assign({},s,{[t.id]:!s[t.id]}))}),
           !isClosedStatus(t.status)? React.createElement(CompleteBox,{onDone:()=>completeTaskInline(t),title:'Mark task done'})
-            : React.createElement('span',{className:'done-check','aria-label':t.status==='done'?'Done':'Abandoned'}, React.createElement(Icon,{name:t.status==='done'?'check':'x',size:13,strokeWidth:3})),
+            : React.createElement('span',{className:'done-check'+(t.status==='done'?'':' abd'),'aria-label':t.status==='done'?'Done':'Abandoned'}, React.createElement(Icon,{name:t.status==='done'?'check':'x',size:13,strokeWidth:3})),
           React.createElement('div',{style:{flex:1,minWidth:0}},
             React.createElement('div',{style:{fontWeight:600,display:'flex',gap:8,alignItems:'center'}}, React.createElement('span',{className:'tlink'},t.title), t.status==='blocked'&&React.createElement('span',{className:'pill-s s-red'},'Blocked')),
             isClosedStatus(t.status)
-              ? React.createElement('div',{className:'meta-line',style:{marginTop:4}}, React.createElement('span',{style:{color:'#137a50',fontWeight:700}}, (t.status==='done'?'Completed ':'Abandoned ')+fmtDate(t.doneAt||t.lastActivity)), t.dueDate? [React.createElement('span',{key:'d',style:{opacity:.5}},'\u00b7'), React.createElement('span',{key:'e'}, (String(t.doneAt||t.lastActivity).slice(0,10)<=t.dueDate?'on time':'after the due date')+' (due '+fmtDate(t.dueDate)+')')] : null)
+              ? React.createElement('div',{className:'meta-line',style:{marginTop:4}}, React.createElement('span',{className:'done-when'}, (t.status==='done'?'Completed ':'Abandoned ')+fmtDate(t.doneAt||t.lastActivity)), t.dueDate? [React.createElement('span',{key:'d',style:{opacity:.5}},'\u00b7'), React.createElement('span',{key:'e'}, (String(t.doneAt||t.lastActivity).slice(0,10)<=t.dueDate?'on time':'after the due date')+' (due '+fmtDate(t.dueDate)+')')] : null)
               : React.createElement('div',{className:'meta-line',style:{marginTop:4}},
               React.createElement(DueTag,{date:t.dueDate,status:t.status}),
               React.createElement('span',{style:{opacity:.5}},'\u00b7'),
@@ -3899,7 +3915,7 @@ function OkrCard({okr}){
   const PM=usePerms(); const mayEd=PM.mayEdit('objective',okr).ok; const canDel=PM.mayDelete('objective',okr).allow;
   const GCP=useGuardedCreate('project','project.create',A.saveProject);
   const [edit,setEdit]=useState(false); const [del,setDel]=useState(false); const [risk,setRisk]=useState(false);
-  const [sc,setSc]=useState(false); const [pr,setPr]=useState(false); const [addProj,setAddProj]=useState(false);
+  const [sc,setSc]=useState(false); const [pr,setPr]=useState(false); const [addProj,setAddProj]=useState(false); const [complete,setComplete]=useState(false);
   useEffect(()=>{ if(cc.n>0){ setSc(cc.expand); setPr(cc.expand); } },[cc.n]);
   const conf=okrConfidence(okr.id); const ps=projectsForOkr(okr.id); const owner=maps.person[okr.ownerId];
   const anyOpen=sc||pr;
@@ -3919,8 +3935,12 @@ function OkrCard({okr}){
         !okr.archived&&!GCP.hidden&&React.createElement('button',{className:'btn sm',title:GCP.tip? 'Add a project linked to this objective. '+GCP.tip : 'Add a project linked to this objective',onClick:()=>setAddProj(true)},'+ Project'),
         React.createElement('button',{className:'btn sm icon',title:'Open objective',onClick:()=>nav.openOkr(okr.id)},React.createElement(Icon,{name:'arrow-up-right',size:13})),
         React.createElement('button',{className:'btn sm icon',title:anyOpen?'Collapse this card':'Expand this card',onClick:()=>{const v=!anyOpen;setSc(v);setPr(v);}},React.createElement(Icon,{name:anyOpen?'chevron-up':'chevron-down',size:14})),
+        mayEd&&!okr.archived&&(okr.status||'active')==='active'&&React.createElement('button',{className:'btn sm',title:'Mark this objective complete, with a note on the outcome',onClick:()=>setComplete(true)},React.createElement(Icon,{name:'check',size:13}),' Complete'),
+        mayEd&&(okr.status||'active')!=='active'&&React.createElement('button',{className:'btn sm',title:'Reopen this objective',onClick:()=>A.saveOkr({...okr,status:'active',doneAt:null})},'Reopen'),
         mayEd&&React.createElement('button',{className:'btn sm icon',title:'Edit objective',onClick:()=>setEdit(true)},React.createElement(Icon,{name:'pencil',size:13})),
         canDel&&React.createElement('button',{className:'btn sm icon danger',title:'Delete objective',onClick:()=>setDel(true)},React.createElement(Icon,{name:'trash',size:14})))),
+    (okr.status||'active')!=='active'&&React.createElement('div',{className:'proj-done',style:{marginTop:10}}, React.createElement('span',{className:'done-check'+(okr.status==='done'?'':' abd')},React.createElement(Icon,{name:okr.status==='done'?'check':'x',size:13,strokeWidth:3})), React.createElement('div',null, React.createElement('b',null,(okr.status==='done'?'Completed ':'Abandoned ')+fmtDate(okr.doneAt)), okr.completionNote? React.createElement('div',{className:'done-note'},okr.completionNote) : null)),
+    complete&&React.createElement(OkrCompleteModal,{okr,onClose:()=>setComplete(false),onSave:(patch)=>{ A.saveOkr({...okr,...patch}); setComplete(false); }}),
     React.createElement('div',{className:'tlink okr-title',title:anyOpen?'Collapse this objective':'Expand this objective',onClick:()=>{const v=!anyOpen;setSc(v);setPr(v);}}, okr.theme),
     anyOpen && okr.objective && React.createElement(ClampText,{text:okr.objective}),
     !anyOpen && React.createElement('div',{className:'tiny muted',style:{marginTop:7,display:'flex',gap:14,flexWrap:'wrap',alignItems:'center'}},
@@ -3970,7 +3990,8 @@ function OkrsView(){
     if(fix.length) writeMany(fix.map(x=>({coll:'okrs',obj:{...x.o,num:x.n}})));
   },[okrs,writeMany]);
   const sorted=[...okrs].sort((a,b)=>(a.num||99)-(b.num||99));
-  const live=sorted.filter(o=>!o.archived), arch=sorted.filter(o=>o.archived);
+  const live=sorted.filter(o=>!o.archived&&(o.status||'active')==='active'), doneL=sorted.filter(o=>!o.archived&&(o.status||'active')!=='active').sort((a,b)=>String(b.doneAt||'').localeCompare(String(a.doneAt||''))), arch=sorted.filter(o=>o.archived);
+  const [showDone,setShowDone]=useState(false);
   return React.createElement('div',null,
     React.createElement('div',{className:'spread',style:{marginBottom:14}},
       React.createElement('div',{className:'muted',style:{fontSize:13}}, live.length+' objectives \u00b7 Objective Health rolls up from project health',
@@ -3991,6 +4012,9 @@ function OkrsView(){
           }
           setDragId(null); setOverId(null); }},
       React.createElement(OkrCard,{okr:o})))),
+    doneL.length>0&&React.createElement('div',{style:{marginTop:22}},
+      React.createElement('div',{className:'section-title done-band',style:{marginBottom:10,cursor:'pointer'},onClick:()=>setShowDone(v=>!v)}, React.createElement('span',{style:{display:'flex',alignItems:'center',gap:8}}, React.createElement(Icon,{name:showDone?'chevron-down':'chevron-right',size:13}), 'Completed ('+doneL.length+')')),
+      showDone? React.createElement('div',{className:'okr-grid'}, doneL.map(o=>React.createElement(OkrCard,{key:o.id,okr:o}))) : null),
     showArch&&arch.length>0&&React.createElement('div',{style:{marginTop:22}},
       React.createElement('div',{className:'section-title',style:{marginBottom:10}},'Archived'),
       React.createElement('div',{className:'okr-grid'}, arch.map(o=>React.createElement(OkrCard,{key:o.id,okr:o})))),
@@ -5164,7 +5188,9 @@ function cirriSnapshot(g, H, PM, W, opts){
       repliesAsked:rs.asked, repliesAnswered:rs.answered, medianReplyHours: rs.medianHours==null? null : Math.round(rs.medianHours*10)/10, unansweredOver48h:rs.open.length}; });
   /* objectives */
   const okrOut=okrs.map(o=>{ const ps=projOut.filter(p=>(p.objectiveIds||[]).includes(o.id)); const crit=(o.successCriteria||[]); const covered=new Set(); tasks.forEach(t=>(t.criteriaIds||[]).forEach(c=>covered.add(c))); projects.forEach(p=>(p.criteriaIds||[]).forEach(c=>covered.add(c)));
-    return {id:o.id, name:o.name||o.title, ownerId:o.ownerId||'', target:o.target||o.targetLabel||'', health:o.health||'', criteria:crit.map(c=>({id:c.id,text:c.text,covered:covered.has(c.id)})), projectIds:ps.map(p=>p.id), activeProjects:ps.filter(p=>p.queue==='active').length}; });
+    return {id:o.id, name:o.theme||o.name||o.title||'', statement:String(o.objective||'').slice(0,300), ownerId:o.ownerId||'', timeframe:o.timeframe||'', status:o.archived?'archived':(o.status||'active'), doneAt:o.doneAt||'', completionNote:String(o.completionNote||'').slice(0,400), health:o.health||'', criteria:crit.map(c=>({id:c.id,text:c.text,start:c.start||'',now:c.now||'',target:c.target||'',covered:covered.has(c.id)})), projectIds:ps.map(p=>p.id), activeProjects:ps.filter(p=>p.queue==='active').length, doneProjects:ps.filter(p=>p.queue==='closed').length}; });
+  const changes=(opts.hcHistory||[]).slice().sort((a,b)=>String(b.effectiveDate||'').localeCompare(String(a.effectiveDate||''))).slice(0,60).map(h=>({when:h.effectiveDate,type:h.type,name:h.name,role:h.role||h.title||'',org:lbl[h.leaderId]||''}));
+  const departures=(opts.attrition||[]).slice().sort((a,b)=>String(b.exitDate||'').localeCompare(String(a.exitDate||''))).slice(0,40).map(a=>({when:a.exitDate,name:a.name,role:a.role||'',org:lbl[a.leaderId]||'',type:a.attritionType||'',reason:String(a.reason||'').slice(0,160)}));
   /* metrics: latest reading and goal; judgement of on/off plan is left to the reader for now */
   W=W||{}; if(!W.periods) W.periods=(g.state&&g.state.wbr_periods)||[]; if(!W.S) { try{ W.S=wbrEffSettings(g.state&&g.state.wbrSettings); }catch(x){} }
   const metricsOut=(W&&W.metrics? W.metrics : []).map(m=>{ const es=(W.entries||[]).filter(e=>e.mid===m.id).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))); const last=es[0]||null; let goal=null; try{ goal=last? (wbrGoalInfo(m,last.pk)||{}).goal : null; }catch(e){}
@@ -5194,7 +5220,7 @@ function cirriSnapshot(g, H, PM, W, opts){
     generatedAt:new Date().toISOString(), today, weekOf:week, build:BUILD, workspace:WSR.name||'', viewer: opts.viewer||null,
     counts:{people:peopleOut.length, projects:projOut.length, activeProjects:projOut.filter(p=>p.queue==='active').length, tasks:taskOut.length, objectives:okrOut.length, metrics:metricsOut.length},
     definitions:{ queue:'QUEUED = a project that exists but is not committed to; ACTIVE = committed, with a date, being worked; CLOSED = done or abandoned. "Open" means active + queued. Only ACTIVE projects count as work in progress.', stale:'no update on open work for '+WSR.staleDays+'+ days', checkin:'the owner posts once a week on each active project: what moved, what is in the way, on track or not', onTimeRate90d:'share of tasks completed in the last 90 days that were done on or before their due date', medianReplyHours:'median hours from an @mention or a comment on their work to their first reply, last 90 days', unansweredOver48h:'requests to them with no reply after two days', datePushes:'times a due date was moved later' },
-    people:peopleOut, objectives:okrOut, projects:projOut, tasks:taskOut, metrics:metricsOut, costByOrg:costOut, costNote: costOut.length? ('All money in '+WSR.currency+' per year. OTE = salary plus target variable. Fully loaded = OTE times the fully loaded multiplier ('+HCR.flm+', with per-country overrides) covering taxes, benefits, tools and overhead. Cutting a person saves their fully loaded cost per year, less any severance, which is not in this data.') : '', pendingApprovals:approvalsOut, openReqs:reqsOut, checkinsThisWeek:checkinsWeek, recentComments, recentActivity };
+    people:peopleOut, objectives:okrOut, peopleChanges:changes, departures, projects:projOut, tasks:taskOut, metrics:metricsOut, costByOrg:costOut, costNote: costOut.length? ('All money in '+WSR.currency+' per year. OTE = salary plus target variable. Fully loaded = OTE times the fully loaded multiplier ('+HCR.flm+', with per-country overrides) covering taxes, benefits, tools and overhead. Cutting a person saves their fully loaded cost per year, less any severance, which is not in this data.') : '', pendingApprovals:approvalsOut, openReqs:reqsOut, checkinsThisWeek:checkinsWeek, recentComments, recentActivity };
 }
 /* A short text rendering for the model: compact, one line per entity, with ids for citation. */
 function snapshotText(s){
@@ -5204,8 +5230,10 @@ function snapshotText(s){
   if((s.costByOrg||[]).length){ L.push('\nCOST BY ORG - '+s.costNote+' (org | people | total OTE | total fully loaded)'); s.costByOrg.forEach(o=>L.push([o.org,o.people,o.ote,o.fullyLoaded].join(' | '))); }
   L.push('\nPEOPLE (id | name | title | level | org | manager | tenure months | ACTIVE projects owned | QUEUED projects owned (not in progress) | closed projects owned | open tasks | overdue tasks | overdue ACTIVE projects | date pushes on owned | stale active | check-ins missing this week | tasks done 90d | on-time % | median reply h | unanswered >48h | last in Cirri | on leave'+(s.people.some(p=>p.performance!==undefined)?' | performance rating | attrition risk':'')+(s.people.some(p=>p.ote!==undefined)?' | OTE per year | FULLY LOADED cost per year | paid in | cost allocation':'')+')');
   s.people.forEach(p=>L.push([p.id,p.name,p.title,p.level,p.org,name(p.managerId),p.tenureMonths==null?'-':p.tenureMonths,p.activeProjectsOwned,p.queuedProjectsOwned,p.closedProjectsOwned,p.openTasks,p.overdueTasks,p.overdueProjects,p.datePushesOnOwned,p.staleActiveProjects,p.checkinsMissingThisWeek,p.tasksDone90d,p.onTimeRate90d==null?'-':p.onTimeRate90d,p.medianReplyHours==null?'-':p.medianReplyHours,p.unansweredOver48h,p.lastInCirri?String(p.lastInCirri).slice(0,10):'-',p.onLeave?'leave':''].concat(p.performance!==undefined?[p.performance||'-',p.attritionRisk||'-']:[]).concat(p.ote!==undefined?[p.ote,p.fullyLoadedCost,p.paidIn||'-',p.allocation||'-']:[]).join(' | ')));
-  L.push('\nOBJECTIVES (id | name | owner | health | criteria covered/total | active projects)');
-  s.objectives.forEach(o=>L.push([o.id,o.name,name(o.ownerId),o.health,o.criteria.filter(c=>c.covered).length+'/'+o.criteria.length,o.activeProjects].join(' | ')));
+  L.push('\nOBJECTIVES - ACTIVE means being pursued now; COMPLETED means closed as achieved on the date shown; ABANDONED means closed without being achieved. Each success criterion shows start -> now -> target where those were recorded (id | name | STATUS | closed on | owner | timeframe | statement | active projects | completed projects | completion note | success criteria: text [start -> now -> target] (covered by work: yes/no))');
+  s.objectives.forEach(o=>L.push([o.id,o.name,({active:'ACTIVE',done:'COMPLETED',abandoned:'ABANDONED',archived:'ARCHIVED'})[o.status]||String(o.status).toUpperCase(),o.doneAt?String(o.doneAt).slice(0,10):'-',name(o.ownerId),o.timeframe||'-',o.statement.replace(/\n/g,' ')||'-',o.activeProjects,o.doneProjects,o.completionNote.replace(/\n/g,' ')||'-',o.criteria.map(c=>c.text+' ['+(c.start||'?')+' -> '+(c.now||'?')+' -> '+(c.target||'?')+'] (covered: '+(c.covered?'yes':'no')+')').join('; ')||'-'].join(' | ')));
+  if((s.peopleChanges||[]).length){ L.push('\nPEOPLE CHANGES - hires and departures on record, newest first (date | change | name | role | org)'); s.peopleChanges.forEach(h=>L.push([h.when,h.type,h.name,h.role,h.org].join(' | '))); }
+  if((s.departures||[]).length){ L.push('\nDEPARTURES - the attrition log (date | name | role | org | type | reason)'); s.departures.forEach(a=>L.push([a.when,a.name,a.role,a.org,a.type,a.reason||'-'].join(' | '))); }
   L.push('\nPROJECTS (id | name | owner | QUEUE | status | health | impact | effort | due | overdue days | pushes | days since activity | stale | open/done/overdue tasks | check-in this week | last check-in | latest note | recent history | description)');
   s.projects.forEach(p=>L.push([p.id,p.name,name(p.ownerId),p.queue.toUpperCase(),p.status,p.health,p.impact||'-',p.effort||'-',p.dueDate||'-',p.overdueDays,p.datePushes,p.daysSinceActivity==null?'-':p.daysSinceActivity,p.stale?'stale':'',p.tasksOpen+'/'+p.tasksDone+'/'+p.tasksOverdue,p.checkinThisWeek?'yes':'no',p.lastCheckin? (p.lastCheckin.week+' '+p.lastCheckin.health+': '+String(p.lastCheckin.moved).slice(0,120)+(p.lastCheckin.blockers?' | blocked by: '+String(p.lastCheckin.blockers).slice(0,120):'')) : '-', p.latestNote? (String(p.latestNote.at).slice(0,10)+' '+name(p.latestNote.by)+': '+p.latestNote.text.replace(/\n/g,' ')) : '-', (p.history||[]).map(h=>h.at+' '+h.type+(h.from?' '+h.from+'->'+h.to:'')).join('; ')||'-', p.description? p.description.replace(/\n/g,' ') : '-'].join(' | ')));
   L.push('\nOPEN TASKS (id | title | description | projects | owners | status | priority | due | overdue days | blocker | next steps | latest note)');
@@ -5257,7 +5285,7 @@ function AgentPanel({onClose, about}){
   const cfg=(g.state.meta.workspace||{}).agent||{};
   const ask=async()=>{ const question=q.trim(); if(!question||busy) return; setBusy(true); setErr('');
     try{
-      const compV=PM.can('comp.view'); const snapOpts={viewer:me?{id:me.id,name:me.name}:null, approvals:PM.approvals||[], sessions:g.state.sessions||[], canComp:(e)=>PM.isOwner||permEmpAllows(compV,PM.me,PM.world,e)};
+      const compV=PM.can('comp.view'); const snapOpts={viewer:me?{id:me.id,name:me.name}:null, approvals:PM.approvals||[], sessions:g.state.sessions||[], hcHistory:H.history||g.state.hc_history||[], attrition:PM.can('roster.view').allow? (g.state.hc_attritionLog||[]) : [], canComp:(e)=>PM.isOwner||permEmpAllows(compV,PM.me,PM.world,e)};
       const snap=cirriSnapshot(g,H,PM,W,snapOpts); const text=snapshotText(snap);
       /* what this person has taught it: rewrites first, then good takes with notes, newest first, a few of each */
       const graded=(g.state.takes||[]).filter(t=>String(t.askedBy||'').toLowerCase()===email && t.status==='answered' && t.feedback && ((t.feedback.edit&&t.feedback.edit.trim()) || t.feedback.note || t.feedback.rating)).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
@@ -5281,7 +5309,7 @@ function AgentPanel({onClose, about}){
         const r=await fn({question, context:text, system:agentSystemFor(g.state.meta), provider:cfg.provider||'openai', model:modelUsed, examples, turns}); answer=(r.data&&r.data.answer)||'';
       }
       store.writeEntity('takes', Object.assign({}, base, {answer, status:'answered', answeredAt:nowISO()})); setQ('');
-    }catch(e){ setErr(String(e.message||e)); }
+    }catch(e){ setErr(String(e.message||e)); try{ const st=(g.state.takes||[]).find(t=>t.status==='pending'&&t.askedBy===email); if(st) store.writeEntity('takes', Object.assign({}, st, {status:'failed', error:String(e.message||e).slice(0,300)})); }catch(x){} }
     setBusy(false); };
   const [editing,setEditing]=useState(null);   /* {id, text} while rewriting an answer */
   const fbRef=useRef({});   /* the latest feedback per take, so two reactions in a row both land */
@@ -5332,7 +5360,7 @@ function AgentPanel({onClose, about}){
         React.createElement('div',{className:'chat-feed',ref:feedRef},
           takes.length? takes.map(t=>React.createElement('div',{key:t.id,className:'take'+(t.kind==='brief'?' brief':'')},
             t.kind==='brief'? React.createElement('div',{className:'take-brief-h'}, React.createElement('span',{className:'agent-word'},'Your brief'), React.createElement('span',{className:'tiny muted'},' \u00b7 '+fmtDate(t.at))) : React.createElement('div',{className:'take-q'}, t.question),
-            React.createElement('div',{className:'take-a'}, t.status==='answered'? React.createElement('div',{style:{whiteSpace:'pre-wrap'}},render(t.answer)) : React.createElement('span',{className:'tiny muted'},'Thinking\u2026')),
+            React.createElement('div',{className:'take-a'}, t.status==='answered'? React.createElement('div',{style:{whiteSpace:'pre-wrap'}},render(t.answer)) : t.status==='failed'? React.createElement('span',{className:'tiny',style:{color:'var(--red)'}},'No answer: '+(t.error||'the model did not respond')+'. Ask again.') : React.createElement('span',{className:'tiny muted'},'Thinking\u2026')),
             (editing&&editing.id===t.id)? React.createElement('div',{className:'take-edit'},
               editing.proposed? React.createElement('div',{className:'tiny',style:{fontWeight:700,color:'var(--deep)',marginBottom:6}},'Cirri\u2019s redo, applying your feedback. Read it, fix anything, then accept. Accepting makes it the training example.') : null,
               React.createElement('textarea',{className:'inp',rows:8,autoFocus:true,value:editing.text,onChange:e=>setEditing(Object.assign({},editing,{text:e.target.value}))}),
@@ -7309,7 +7337,7 @@ function WbrMetricForm({value, onChange, W}){
     React.createElement(Field,{label:'Definition'},
       React.createElement('textarea',{className:'inp',rows:2,value:f.def||'',placeholder:'How this is counted, and anything the team should know before reading it.',onChange:e=>up('def',e.target.value)})),
     React.createElement(Field,{label:'Objectives this drives',hint:'Records which objectives depend on this metric. Nothing reads it yet, it is groundwork for wiring project health to the WBR.'},
-      React.createElement(SearchSelect,{options:g.okrs.filter(o=>!o.archived).map(o=>({id:o.id,label:(o.num?'O'+o.num+' \u00b7 ':'')+o.theme})),
+      React.createElement(SearchSelect,{options:g.okrs.filter(o=>!o.archived&&(o.status||'active')==='active').map(o=>({id:o.id,label:(o.num?'O'+o.num+' \u00b7 ':'')+o.theme})),
         value:f.okrIds||[],onChange:v=>up('okrIds',v),multi:true,placeholder:'Search objectives',up:true})));
 }
 function WbrNewMetricModal({W,sec,onClose,onCreated}){
@@ -11696,15 +11724,15 @@ function InstallCard(){
 /* ---- Workspace ---- */
 function SettingsWorkspace(){
   const g=useGtm(); const store=useStore(); const meta=g.state.meta||{}; const cur=wsEff(meta);
-  const [d,setD]=useState(()=>({name:cur.name||'', logo:(meta.workspace||{}).logo||'', owners:cur.owners.slice(), allowedDomain:cur.allowedDomain||'', currency:cur.currency, locale:cur.locale, timeZone:cur.timeZone||'', fiscalYearStart:cur.fiscalYearStart, idleHours:cur.idleHours}));
+  const [d,setD]=useState(()=>({name:cur.name||'', logo:(meta.workspace||{}).logo||'', openDemo:!!(meta.workspace||{}).openDemo, owners:cur.owners.slice(), allowedDomain:cur.allowedDomain||'', currency:cur.currency, locale:cur.locale, timeZone:cur.timeZone||'', fiscalYearStart:cur.fiscalYearStart, idleHours:cur.idleHours}));
   const [msg,setMsg]=useState(''); const [access,setAccess]=useState(false);
   const me=String((store.user&&store.user.email)||'').toLowerCase();
-  const base={name:cur.name||'', logo:(meta.workspace||{}).logo||'', owners:cur.owners.slice(), allowedDomain:cur.allowedDomain||'', currency:cur.currency, locale:cur.locale, timeZone:cur.timeZone||'', fiscalYearStart:cur.fiscalYearStart, idleHours:cur.idleHours};
+  const base={name:cur.name||'', logo:(meta.workspace||{}).logo||'', openDemo:!!(meta.workspace||{}).openDemo, owners:cur.owners.slice(), allowedDomain:cur.allowedDomain||'', currency:cur.currency, locale:cur.locale, timeZone:cur.timeZone||'', fiscalYearStart:cur.fiscalYearStart, idleHours:cur.idleHours};
   const dirty=JSON.stringify(d)!==JSON.stringify(base);
   const up=(k,v)=>{ setD(Object.assign({},d,{[k]:v})); setMsg(''); };
   const save=()=>{ const owners=d.owners.map(e=>String(e).trim().toLowerCase()).filter(e=>e.indexOf('@')>0); if(!owners.length){ alert('Keep at least one owner.'); return; }
     const w=Object.assign({}, meta.workspace||{}, {owners, allowedDomain:String(d.allowedDomain||'').trim().toLowerCase().replace(/^@/,''), currency:d.currency, locale:d.locale, timeZone:d.timeZone, fiscalYearStart:Number(d.fiscalYearStart)||1, idleHours:Math.min(24,Math.max(0.25,Number(d.idleHours)||8))});
-    g.writeMeta({workspace:Object.assign({},w,{name:(d.name||'').trim(), logo:d.logo||''}), appTitle:(d.name||'').trim()||'Cirri'}); setMsg('Saved.'); };
+    g.writeMeta({workspace:Object.assign({},w,{name:(d.name||'').trim(), logo:d.logo||'', openDemo:!!d.openDemo}), appTitle:(d.name||'').trim()||'Cirri'}); setMsg('Saved.'); };
   const browserTz=(function(){ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone; }catch(e){ return ''; } })();
   return React.createElement('div',{className:'spage'},
     React.createElement(AdminCard,{title:'Company',desc:'Whose workspace this is. Shown beside the Cirri mark in the top bar, on the sign-in screen, and in the browser tab.'},
@@ -11722,6 +11750,8 @@ function SettingsWorkspace(){
     React.createElement(AdminCard,{title:'Sign-in',desc:'Who may sign in. Everyone on the domain below gets in without being listed; the list is for guests and exceptions. Owners always get in.'},
       React.createElement(SettingRow,{label:'Company email domain',hint:'Anyone with an email on this domain may sign in.'}, React.createElement('input',{className:'inp',value:d.allowedDomain,placeholder:'company.com',onChange:e=>up('allowedDomain',e.target.value)})),
       React.createElement(SettingRow,{label:'Named people',hint:'Individual emails allowed or blocked.'}, React.createElement('button',{className:'btn',onClick:()=>setAccess(true)},iLabel('key','Manage the list',13))),
+      React.createElement(SettingRow,{label:'Open demo',hint:'Anyone with a Google account may sign in and use everything, including Ask Cirri. For a demo workspace with fictional data only. Never turn this on for a real company.'},
+        React.createElement('div',{className:'seg'}, React.createElement('button',{className:d.openDemo?'on':'',onClick:()=>{ if(confirm('Open this workspace to any Google account? Only do this on a demo with fictional data.')) up('openDemo',true); }},'On'), React.createElement('button',{className:!d.openDemo?'on':'',onClick:()=>up('openDemo',false)},'Off'))),
       React.createElement(SettingRow,{label:'Sign out after idle',hint:'Hours with no keyboard or mouse before a person is signed out, with a one-minute warning. 15 minutes to 24 hours.'},
         React.createElement('select',{className:'inp',value:d.idleHours,onChange:e=>up('idleHours',Number(e.target.value))}, [[0.25,'15 minutes'],[0.5,'30 minutes'],[1,'1 hour'],[2,'2 hours'],[4,'4 hours'],[8,'8 hours'],[12,'12 hours'],[24,'24 hours']].map(x=>React.createElement('option',{key:x[0],value:x[0]},x[1]))))),
     React.createElement(AdminCard,{title:'Money and time',desc:'How amounts and dates are shown and counted everywhere.'},
