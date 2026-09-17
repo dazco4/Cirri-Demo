@@ -1076,7 +1076,9 @@ document.addEventListener('mouseover', e=>{ const t=e.target&&e.target.closest&&
 window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); window.__installPrompt=e; window.dispatchEvent(new Event('cirri-install-ready')); });
 window.addEventListener('appinstalled', ()=>{ window.__installed=true; window.__installPrompt=null; window.dispatchEvent(new Event('cirri-install-ready')); });
 if('serviceWorker' in navigator && location.protocol==='https:' && !/localhost|127\.0\.0\.1/.test(location.hostname)){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
-const BUILD='2026-09-17-1721';
+/* Local storage keys are namespaced by Firebase project, so two editions on one domain (live and demo) never share a cache. */
+const LS_NS=(typeof FIREBASE_CONFIG==='object'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.projectId)? FIREBASE_CONFIG.projectId : 'local';
+const BUILD='2026-09-17-1812';
 const WS_DEFAULTS={
   name:'', owners:[], allowedDomain:'', idleHours:8,
   checkins:{enabled:true, stalled:true},       /* weekly check-ins on active projects; a missing one counts as stalled */
@@ -1099,8 +1101,8 @@ function wsEff(meta){ const w=(meta&&meta.workspace)||{};
     approver: w.approver==='manager'? 'manager' : 'department_leader',
   }); }
 const WSR=wsEff(null);                        /* live copy; StoreProvider refreshes it */
-function wsRefresh(meta){ Object.assign(WSR, wsEff(meta)); try{ const w=(meta&&meta.workspace)||{}; const cur=JSON.stringify({name:WSR.name||'',logo:w.logo||''}); if(localStorage.getItem('cirri_company')!==cur) localStorage.setItem('cirri_company',cur); }catch(e){} }
-function companyCached(){ try{ return JSON.parse(localStorage.getItem('cirri_company')||'{}'); }catch(e){ return {}; } }
+function wsRefresh(meta){ Object.assign(WSR, wsEff(meta)); try{ const w=(meta&&meta.workspace)||{}; const cur=JSON.stringify({name:WSR.name||'',logo:w.logo||''}); if(localStorage.getItem(('cirri_company@'+LS_NS))!==cur) localStorage.setItem(('cirri_company@'+LS_NS),cur); }catch(e){} }
+function companyCached(){ try{ return JSON.parse(localStorage.getItem(('cirri_company@'+LS_NS))||'{}'); }catch(e){ return {}; } }
 function companyInitials(name){ return String(name||'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
 /* The company's mark: its logo if it has one, otherwise initials on a tile. Distinct from the Cirri mark on purpose. */
 function CompanyMark({name, logo, size}){ size=size||22;
@@ -2010,9 +2012,9 @@ SEED.events = [
 /* ============================================================
    Data + sync layer  (Firebase Realtime DB  ->  localStorage fallback)
    ============================================================ */
-const LS_KEY = 'moego_gtm_os_v1';
-const LS_ME  = 'moego_gtm_os_me';
-const LS_CFG = 'moego_gtm_os_cfg';      // browser-pasted firebase config (test mode)
+const LS_KEY = ('moego_gtm_os_v1@'+LS_NS);
+const LS_ME  = ('moego_gtm_os_me@'+LS_NS);
+const LS_CFG = ('moego_gtm_os_cfg@'+LS_NS);      // browser-pasted firebase config (test mode)
 const DB_ROOT = 'moego_gtm';
 // Compensation lives in a SEPARATE top-level node so Firebase rules can lock it to one person
 // without affecting the rest of the tree (which the whole app reads in one listener).
@@ -2120,16 +2122,17 @@ function StoreProvider({children}){
         if(cancelled) return;
         if(!u){ setUser(null); setMode('auth'); return; }
         const email=(u.email||'').toLowerCase();
-        try{ localStorage.setItem('moego_gtm_os_last', String((u.displayName||'').split(' ')[0]||'')); }catch(e){}
+        try{ localStorage.setItem(('moego_gtm_os_last@'+LS_NS), String((u.displayName||'').split(' ')[0]||'')); }catch(e){}
         setUser(u);
         const proceed=()=>{
           const ref = firebase.database().ref(DB_ROOT);
           dbRef.current = ref;
           ref.once('value').then(snap=>{
             if(!snap.exists()){
-              const seed = freshSeed(); const hc = hcFreshSeed();
-              ref.set({ meta:seed.meta, people:arrToMap(seed.people), okrs:arrToMap(seed.okrs), projects:arrToMap(seed.projects), tasks:arrToMap(seed.tasks), events:arrToMap(seed.events||[]), activity:arrToMap([]),
-                hc_employees:arrToMap(hc.employees), hc_reqs:arrToMap(hc.reqs), hc_attritionLog:arrToMap(hc.attritionLog), hc_leaders:arrToMap(hc.leaders), hc_history:arrToMap(hc.history||[]), feature_requests:arrToMap([]), comments:arrToMap([]), hcSettings:hc.settings, hc_activity:arrToMap([]), approvals:arrToMap([]), wbr_metrics:arrToMap(wbrFreshSeed().metrics), wbr_entries:arrToMap(wbrFreshSeed().entries), wbr_periods:arrToMap(wbrFreshSeed().periods), wbrSettings:wbrFreshSeed().settings });
+              /* a new workspace starts empty: settings only, no sample records. Sample data is a choice on the Data page. */
+              const seed = freshSeed(); const hc = hcFreshSeed(); const blankMeta=Object.assign({}, seed.meta, {appTitle:'Cirri', seeded:false, personMap:{}, inboxSeen:{}, tabOrder:{}, labels:{}, workspace:Object.assign({}, (seed.meta||{}).workspace||{}, {name:''})});
+              ref.set({ meta:blankMeta, people:arrToMap([]), okrs:arrToMap([]), projects:arrToMap([]), tasks:arrToMap([]), events:arrToMap([]), activity:arrToMap([]),
+                hc_employees:arrToMap([]), hc_reqs:arrToMap([]), hc_attritionLog:arrToMap([]), hc_leaders:arrToMap([]), hc_history:arrToMap([]), feature_requests:arrToMap([]), comments:arrToMap([]), hcSettings:Object.assign({}, hc.settings, {teamTags:[]}), hc_activity:arrToMap([]), approvals:arrToMap([]), wbr_metrics:arrToMap([]), wbr_entries:arrToMap([]), wbr_periods:arrToMap([]), wbrSettings:Object.assign({}, wbrFreshSeed().settings, {sections:[], dashboard:[]}) });
             } else if(!snap.child('hcSettings').exists()){
               // one-time migration: DB already has OKR data - graft the headcount data on
               const hc = hcFreshSeed();
@@ -2292,7 +2295,7 @@ function StoreProvider({children}){
       else firebase.auth().signInWithPopup(provider).catch(e=>flash('Sign-in failed: '+e.message));
     }catch(e){ flash('Auth not ready'); }
   },[flash]);
-  const signOut = useCallback(()=>{ try{ sessionStorage.removeItem('cirri_session'); sessionStorage.removeItem('cirri_chat'); }catch(e){} try{ firebase.auth().signOut(); }catch(e){} },[]);   /* a sign-out, by hand or by timeout, starts a fresh Ask Cirri session */
+  const signOut = useCallback(()=>{ try{ sessionStorage.removeItem(('cirri_session@'+LS_NS)); sessionStorage.removeItem(('cirri_chat@'+LS_NS)); }catch(e){} try{ firebase.auth().signOut(); }catch(e){} },[]);   /* a sign-out, by hand or by timeout, starts a fresh Ask Cirri session */
   useEffect(()=>{ const bump=()=>{ lastInput.current=Date.now(); }; ['keydown','mousedown','touchstart','input'].forEach(ev=>window.addEventListener(ev,bump,{passive:true})); return ()=>['keydown','mousedown','touchstart','input'].forEach(ev=>window.removeEventListener(ev,bump)); },[]);
   useEffect(()=>{ if(!newBuild) return; const t=setInterval(()=>{ if(Date.now()-lastInput.current>10000) location.reload(); },2000); return ()=>clearInterval(t); },[newBuild]);
   const [idleWarn,setIdleWarn]=useState(false);
@@ -2379,7 +2382,8 @@ function StoreProvider({children}){
       if(Array.isArray(data.notes)) ref.child('notes').set(arrToMap(data.notes));
       if(Array.isArray(data.checkins)) ref.child('checkins').set(arrToMap(data.checkins));
       if(Array.isArray(data.comments)) ref.child('comments').set(arrToMap(data.comments));
-    } else setState(s=>{ const next={...s, ...clean}; if(hasHc){ next.hc_employees=data.hc_employees||[]; next.hc_reqs=data.hc_reqs||[]; next.hc_attritionLog=data.hc_attritionLog||[]; next.hc_leaders=data.hc_leaders||[]; next.hc_history=data.hc_history||[]; next.hcSettings=data.hcSettings||{}; } if(Array.isArray(data.hc_activity)) next.hc_activity=data.hc_activity; if(Array.isArray(data.approvals)) next.approvals=data.approvals; if(Array.isArray(data.wbr_metrics)) next.wbr_metrics=data.wbr_metrics; if(Array.isArray(data.wbr_entries)) next.wbr_entries=data.wbr_entries; if(Array.isArray(data.wbr_periods)) next.wbr_periods=data.wbr_periods; if(data.wbrSettings) next.wbrSettings=data.wbrSettings; if(Array.isArray(data.feature_requests)) next.feature_requests=data.feature_requests; if(Array.isArray(data.comments)) next.comments=data.comments; saveLocal(next); return next; });
+      ['takes','sessions','feature_requests','hc_activity'].forEach(k=>{ if(Array.isArray(data[k])) ref.child(k).set(arrToMap(data[k])); });
+    } else setState(s=>{ const next={...s, ...clean}; if(hasHc){ next.hc_employees=data.hc_employees||[]; next.hc_reqs=data.hc_reqs||[]; next.hc_attritionLog=data.hc_attritionLog||[]; next.hc_leaders=data.hc_leaders||[]; next.hc_history=data.hc_history||[]; ['comments','notes','checkins','approvals','takes','sessions','feature_requests','hc_activity','wbr_metrics','wbr_entries','wbr_periods'].forEach(k=>{ if(Array.isArray(data[k])) next[k]=data[k]; }); if(data.wbrSettings&&typeof data.wbrSettings==='object') next.wbrSettings=data.wbrSettings; if(data.hcSettings&&typeof data.hcSettings==='object') next.hcSettings=Object.assign({},next.hcSettings||{},data.hcSettings); next.hcSettings=data.hcSettings||{}; } if(Array.isArray(data.hc_activity)) next.hc_activity=data.hc_activity; if(Array.isArray(data.approvals)) next.approvals=data.approvals; if(Array.isArray(data.wbr_metrics)) next.wbr_metrics=data.wbr_metrics; if(Array.isArray(data.wbr_entries)) next.wbr_entries=data.wbr_entries; if(Array.isArray(data.wbr_periods)) next.wbr_periods=data.wbr_periods; if(data.wbrSettings) next.wbrSettings=data.wbrSettings; if(Array.isArray(data.feature_requests)) next.feature_requests=data.feature_requests; if(Array.isArray(data.comments)) next.comments=data.comments; saveLocal(next); return next; });
     flash('Data imported');
   },[mode,flash,user]);
 
@@ -4809,7 +4813,7 @@ function SetupScreen({onClose}){
 
 function AuthScreen(){
   const { signIn } = useStore(); const [setup,setSetup]=useState(false);
-  const lastName=(function(){ try{ return localStorage.getItem('moego_gtm_os_last')||''; }catch(e){ return ''; } })();
+  const lastName=(function(){ try{ return localStorage.getItem(('moego_gtm_os_last@'+LS_NS))||''; }catch(e){ return ''; } })();
   return React.createElement('div',{className:'login'},
     React.createElement('div',{className:'login-left'},
       React.createElement('div',{className:'login-brand'},
@@ -5169,8 +5173,9 @@ function cirriSnapshot(g, H, PM, W, opts){
     const byPeriod={}; es.filter(e=>e.v!=null&&e.v!=='').forEach(e=>{ const cur=byPeriod[e.pk]; if(!cur || wkRank(e.wk)>wkRank(cur.wk)) byPeriod[e.pk]=e; });   /* MTD readings accumulate; only the latest week of a period is the period's reading */
     const ordered=Object.values(byPeriod).sort((a,b)=>String(a.pk).localeCompare(String(b.pk)));
     const history=ordered.slice(-8).map(e=>{ let gl=null; try{ gl=(wbrGoalInfo(m,e.pk)||{}).goal; }catch(x){}
-      let done=true, progress=null, pace=null; try{ const per=wbrPeriodOf(W.periods||[], e.pk, W.S||wbrEffSettings(null)); if(per.end>=today && !per.closed){ done=false; const total=wbrBizDays(per.start,per.end,per.holidays)||1; const el=Math.min(total, wbrBizDays(per.start,today,per.holidays)); progress=Math.round(100*el/total); const isCum=(m.cad||'').toUpperCase()==='MTD'||(m.agg||'')==='sum'; if(isCum && el>0 && gl!=null && Number(gl)) pace=Math.round(Number(e.v)/(el/total)); } }catch(x){}
-      return {period:e.pk, week:e.wk, value:e.v, goal:gl, complete:done, progressPct:progress, onPaceFor:pace}; });
+      /* a week reading covers the period up to the day before that week's date, so pace is measured to THAT day, not to today */
+      let done=true, progress=null, pace=null, asOf=null; try{ const per=wbrPeriodOf(W.periods||[], e.pk, W.S||wbrEffSettings(null)); if(per.end>=today && !per.closed){ done=false; const wkDate=((per.weeks||[]).find(w=>w.id===e.wk)||{}).date; const through=(wkDate && wkDate<=today)? new Date(new Date(wkDate+'T12:00:00').getTime()-86400000).toISOString().slice(0,10) : today; asOf=through; const total=wbrBizDays(per.start,per.end,per.holidays)||1; const el=Math.min(total, wbrBizDays(per.start,through,per.holidays)); progress=Math.round(100*el/total); const isCum=(m.cad||'').toUpperCase()==='MTD'||(m.agg||'')==='sum'||(m.agg||'')==='cum'; if(isCum && el>0 && gl!=null && Number(gl)) pace=Math.round(Number(e.v)/(el/total)); } }catch(x){}
+      return {period:e.pk, week:e.wk, value:e.v, goal:gl, complete:done, progressPct:progress, asOf, onPaceFor:pace}; });
     const nums=ordered.filter(e=>{ try{ const per=wbrPeriodOf(W.periods||[], e.pk, W.S||wbrEffSettings(null)); return per.end<today || per.closed; }catch(x){ return true; } }).map(e=>Number(e.v)).filter(x=>!isNaN(x)); let trend='not enough complete readings';
     if(nums.length>=4){ const cur=nums[nums.length-1]; const prev=nums.slice(-4,-1); const mean=prev.reduce((a,b)=>a+b,0)/prev.length; const ch=mean? (cur-mean)/Math.abs(mean) : 0; const dir=ch>0.05?'rising':ch<-0.05?'falling':'flat'; const good=m.dir==='down'; trend=dir+(dir==='flat'?'':((dir==='rising')!==good?' (improving)':' (worsening)'))+' '+(ch>=0?'+':'')+Math.round(ch*100)+'% vs prior 3'; }
     const UNIT={cur:'money ('+WSR.currency+')',pct:'percent',days:'days',hrs:'hours',sec:'seconds',mo:'months',num:'count',ratio:'ratio',score:'score'}; const fmt=m.fmt||'num';
@@ -5205,7 +5210,7 @@ function snapshotText(s){
   L.push('\nOPEN TASKS (id | title | description | projects | owners | status | priority | due | overdue days | blocker | next steps | latest note)');
   s.tasks.filter(t=>t.status!=='done'&&t.status!=='abandoned').forEach(t=>L.push([t.id,t.title,(t.description||'-').replace(/\n/g,' '),t.projectIds.join(','),t.ownerIds.map(name).join(','),t.status,t.priority||'-',t.dueDate||'-',t.overdueDays,t.blocker||'',(t.nextSteps||[]).join('; ')||'-',t.latestNote||'-'].join(' | ')));
   if(s.metrics.length){ L.push('\nBUSINESS REVIEW METRICS - the numbers each org reports weekly against goals; the owner is accountable for the metric and the org\u2019s leader for all of the org\u2019s metrics. READ THE READINGS CAREFULLY: a period marked COMPLETE is a finished month; one marked IN PROGRESS is a partial month, so its value is what has accumulated SO FAR and must never be compared to a complete month - use the "on pace for" figure against the goal instead. Cadence MTD = accumulates through the month; T7 = the last 7 days; CURRENT = a point-in-time level.\nEVERY VALUE IS SHOWN WITH ITS UNIT (s = seconds, h = hours, d = days, % = percent, '+WSR.currency+' = money). Never change the unit.\n(id | name | section/org | owner | UNIT | what it measures | cadence | aggregation | good direction | trend | readings oldest first: period [COMPLETE or IN PROGRESS n% through] = value / goal [on pace for X])');
-    s.metrics.forEach(m=>L.push([m.id,m.name,m.section,name(m.ownerId),m.unit,m.definition||'-',m.cadence,m.aggregation,m.goodDirection,m.trend,(m.history||[]).map(h=>h.period+(h.week?'/'+h.week:'')+' ['+(h.complete?'COMPLETE':'IN PROGRESS '+(h.progressPct==null?'?':h.progressPct)+'% through')+'] = '+h.valueShown+(h.goal!=null?' / goal '+h.goalShown:'')+(h.paceShown?' [on pace for '+h.paceShown+']':'')).join(' ; ')||'-'].join(' | '))); }
+    s.metrics.forEach(m=>L.push([m.id,m.name,m.section,name(m.ownerId),m.unit,m.definition||'-',m.cadence,m.aggregation,m.goodDirection,m.trend,(m.history||[]).map(h=>h.period+(h.week?'/'+h.week:'')+' ['+(h.complete?'COMPLETE':'IN PROGRESS '+(h.progressPct==null?'?':h.progressPct)+'% through as of '+(h.asOf||s.today))+'] = '+h.valueShown+(h.goal!=null?' / goal '+h.goalShown:'')+(h.paceShown?' [on pace for '+h.paceShown+']':'')).join(' ; ')||'-'].join(' | '))); }
   if((s.pendingApprovals||[]).length){ L.push('\nPENDING APPROVALS (id | kind | title | requested by | approver | since)'); s.pendingApprovals.forEach(a=>L.push([a.id,a.kind,a.title,a.requestedBy,a.approver,a.at].join(' | '))); }
   if((s.openReqs||[]).length){ L.push('\nOPEN REQS - hiring in progress (id | title | org | level | hiring manager | why)'); s.openReqs.forEach(r=>L.push([r.id,r.title,r.org,r.level,r.hiringManager,r.openedReason||'-'].join(' | '))); }
   L.push('\nRECENT COMMENTS (at | author | on | text)'); s.recentComments.forEach(c=>L.push([c.at,name(c.authorId),c.entityType+':'+c.entityId,c.text.replace(/\n/g,' ')].join(' | ')));
@@ -5240,10 +5245,10 @@ function AgentPanel({onClose, about}){
   const mine=(g.state.takes||[]).filter(t=>String(t.askedBy||'').toLowerCase()===email).sort((a,b)=>String(a.at).localeCompare(String(b.at)));
   const savedCount=mine.filter(t=>t.saved).length, briefCount=mine.filter(t=>t.kind==='brief').length;
   /* chats: every question belongs to a chat; the id lives in sessionStorage so a reload keeps the chat and New chat starts a fresh one */
-  const [chatId,setChatId]=useState(()=>{ try{ return sessionStorage.getItem('cirri_chat')||''; }catch(e){ return ''; } });
+  const [chatId,setChatId]=useState(()=>{ try{ return sessionStorage.getItem(('cirri_chat@'+LS_NS))||''; }catch(e){ return ''; } });
   const chats=(()=>{ const m={}; mine.filter(t=>t.kind!=='brief'&&t.chatId).forEach(t=>{ const c=m[t.chatId]=m[t.chatId]||{id:t.chatId,title:t.question,at:t.at,last:t.at,n:0}; c.n++; if(String(t.at)>String(c.last)) c.last=t.at; }); return Object.values(m).sort((a,b)=>String(b.last).localeCompare(String(a.last))); })();
   const [chatsOpen,setChatsOpen]=useState(false);
-  const pickChat=(id)=>{ setChatId(id); try{ if(id) sessionStorage.setItem('cirri_chat',id); else sessionStorage.removeItem('cirri_chat'); }catch(e){} setChatsOpen(false); setTab('chat'); };
+  const pickChat=(id)=>{ setChatId(id); try{ if(id) sessionStorage.setItem(('cirri_chat@'+LS_NS),id); else sessionStorage.removeItem(('cirri_chat@'+LS_NS)); }catch(e){} setChatsOpen(false); setTab('chat'); };
   const newChat=()=>pickChat('');
   const takes= tab==='saved'? mine.filter(t=>t.saved).slice(-60) : tab==='briefs'? mine.filter(t=>t.kind==='brief').slice(-30) : (chatId? mine.filter(t=>t.kind!=='brief' && t.chatId===chatId) : []);
   const feedRef=useRef(null); const lastKey=takes.length? takes[takes.length-1].id+':'+takes[takes.length-1].status+':'+String((takes[takes.length-1].answer||'').length) : '';
@@ -10427,7 +10432,7 @@ function HeadcountFinance(){
               td([dotFor(pk,pb,'down')?React.createElement('span',{key:'d',style:{display:'inline-block',width:7,height:7,borderRadius:'50%',background:dotFor(pk,pb,'down'),marginRight:6,verticalAlign:'1px'}}):null,React.createElement('span',{key:'v'},hcPbCell(pb,()=>hcx.openModal({type:'payback',channel:lbl})))],1)))))),
       React.createElement('div',{className:'muted tiny',style:{marginTop:8}},
         'GM Hit = GTM COGS ('+fin.gtmGmHit.toFixed(1)+'%) + Other ('+(S.otherGmHitPct||0).toFixed(1)+'%) = '+fin.totalGmHit.toFixed(1)+'%. ',
-        'Inbound CAC = Inbound Sales + Marketing + full shared. Outbound CAC = Outbound Sales + full shared, no marketing.')),
+        'The channel on each cost line decides: Inbound-tagged cost goes to inbound, Outbound-tagged to outbound, and cost with no channel (marketing included) is shared across every go-live in proportion.')),
 
     // cost-by-type panels
     React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:12,marginBottom:16}},
@@ -11528,6 +11533,7 @@ function AdminView({section, isAdmin}){
         React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
           React.createElement('button',{className:'btn primary',onClick:doExport},iLabel('download','Export JSON backup')),
           canImport&&React.createElement('button',{className:'btn',onClick:()=>fileRef.current.click()},iLabel('upload','Import JSON')),
+          canImport&&React.createElement('button',{className:'btn','data-tip':'Loads Bramble, a fictional 200-person company with a year of history. Replaces everything here.',onClick:async()=>{ if(!confirm('Load the Bramble sample company? This replaces every record in this workspace.')) return; try{ const r=await fetch('bramble-demo.json',{cache:'no-store'}); if(!r.ok) throw new Error('bramble-demo.json is not published beside the app'); const d=await r.json(); importData(d); flash('Sample company loaded.'); }catch(e){ flash('Could not load the sample: '+(e.message||e)); } }},iLabel('sparkles','Load the sample company')),
           React.createElement('input',{type:'file',accept:'application/json',ref:fileRef,style:{display:'none'},onChange:doImport}))),
       React.createElement(AdminCard,{title:'Accountability history',desc:'Reset every teammate\u2019s accountability history (date pushes and late completions) back to a clean slate. The performance drill-down starts fresh from today.'},
       React.createElement('button',{className:'btn danger',disabled:!PMa.can('grade.reset').allow,onClick:()=>setResetAll(true)},'Reset all history')),
@@ -11590,7 +11596,7 @@ const MONTHS=['January','February','March','April','May','June','July','August',
    ============================================================ */
 const NOTIFY_DEFAULTS={sound:'none', badge:true, desktop:false, muteUntil:''};
 /* one id per open tab: the Ask Cirri feed shows what was asked in this session, nothing older */
-const CIRRI_SESSION=(function(){ try{ let v=sessionStorage.getItem('cirri_session'); if(!v){ v='ss_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); sessionStorage.setItem('cirri_session',v); } return v; }catch(e){ return 'ss_'+Date.now().toString(36); } })();
+const CIRRI_SESSION=(function(){ try{ let v=sessionStorage.getItem(('cirri_session@'+LS_NS)); if(!v){ v='ss_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); sessionStorage.setItem(('cirri_session@'+LS_NS),v); } return v; }catch(e){ return 'ss_'+Date.now().toString(36); } })();
 const NOTIFY_SOUNDS=[['none','None'],['ding','Ding'],['pop','Pop'],['knock','Knock'],['chime','Chime']];
 let _audioCtx=null;
 function notifyPlay(kind){
