@@ -1078,7 +1078,7 @@ window.addEventListener('appinstalled', ()=>{ window.__installed=true; window.__
 if('serviceWorker' in navigator && location.protocol==='https:' && !/localhost|127\.0\.0\.1/.test(location.hostname)){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 /* Local storage keys are namespaced by Firebase project, so two editions on one domain (live and demo) never share a cache. */
 const LS_NS=(typeof FIREBASE_CONFIG==='object'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.projectId)? FIREBASE_CONFIG.projectId : 'local';
-const BUILD='2026-09-17-1812';
+const BUILD='2026-09-17-1841';
 const WS_DEFAULTS={
   name:'', owners:[], allowedDomain:'', idleHours:8,
   checkins:{enabled:true, stalled:true},       /* weekly check-ins on active projects; a missing one counts as stalled */
@@ -4078,6 +4078,7 @@ function useWorkScope(labels){
 function MyWorkView(){
   const { projects, tasks, people, maps, me, setMe, A, tasksForProject } = useGtm();
   const nav=useNav();
+  const W=useWorkScope();   /* every hook runs on every render, before any early return */
   if(!me){
     return React.createElement('div',{className:'card',style:{padding:24,maxWidth:480,margin:'10px auto',textAlign:'center'}},
       React.createElement('div',{style:{marginBottom:8,color:'var(--accent-700)'}},React.createElement(Icon,{name:'hand',size:30,strokeWidth:1.5})),
@@ -4087,7 +4088,6 @@ function MyWorkView(){
         React.createElement(SearchSelect,{options:peopleOptions(people),value:'',placeholder:'Search for your name\u2026',onChange:(v)=>{ if(v) setMe(v); }})));
   }
   const onPick=(k,id)=>{ k==='project'?nav.openProject(id):nav.openTask(id); };
-  const W=useWorkScope();
   return React.createElement('div',null,
     W.header,
     React.createElement(RhythmView,{person:W.shown, onPick:onPick, all:W.isAll, onlyIds:(W.isAll&&W.teamOnly)? W.visibleIds : null}));
@@ -11519,7 +11519,7 @@ function AdminView({section, isAdmin}){
   const [bulk,setBulk]=useState(null); const [bulkTyped,setBulkTyped]=useState(''); const [bulkMsg,setBulkMsg]=useState('');
   const fileRef=useRef(null);
   const doExport=()=>{
-    const data={meta:state.meta,people:state.people,okrs:state.okrs,projects:state.projects,tasks:state.tasks,events:state.events,activity:state.activity||[],hc_employees:(state.hc_employees||[]).map(e=>({...e,...((g.comp||{})[e.id]||{})})),hc_reqs:state.hc_reqs,hc_attritionLog:state.hc_attritionLog,hc_leaders:state.hc_leaders,hc_history:state.hc_history,feature_requests:state.feature_requests,comments:state.comments,hcSettings:state.hcSettings,hc_activity:state.hc_activity||[],approvals:state.approvals||[],wbr_metrics:state.wbr_metrics||[],wbr_entries:state.wbr_entries||[],wbr_periods:state.wbr_periods||[],wbrSettings:state.wbrSettings||{}};
+    const data={meta:state.meta,people:state.people,okrs:state.okrs,projects:state.projects,tasks:state.tasks,events:state.events,activity:state.activity||[],hc_employees:(state.hc_employees||[]).map(e=>({...e,...((g.comp||{})[e.id]||{})})),hc_reqs:state.hc_reqs,hc_attritionLog:state.hc_attritionLog,hc_leaders:state.hc_leaders,hc_history:state.hc_history,feature_requests:state.feature_requests,comments:state.comments,hcSettings:state.hcSettings,hc_activity:state.hc_activity||[],approvals:state.approvals||[],wbr_metrics:state.wbr_metrics||[],wbr_entries:state.wbr_entries||[],wbr_periods:state.wbr_periods||[],wbrSettings:state.wbrSettings||{},notes:state.notes||[],checkins:state.checkins||[],takes:state.takes||[],sessions:state.sessions||[]};
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cirri-'+todayStr()+'.json'; a.click();
   };
