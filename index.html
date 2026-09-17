@@ -1081,7 +1081,7 @@ window.addEventListener('appinstalled', ()=>{ window.__installed=true; window.__
 if('serviceWorker' in navigator && location.protocol==='https:' && !/localhost|127\.0\.0\.1/.test(location.hostname)){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 /* Local storage keys are namespaced by Firebase project, so two editions on one domain (live and demo) never share a cache. */
 const LS_NS=(typeof FIREBASE_CONFIG==='object'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.projectId)? FIREBASE_CONFIG.projectId : 'local';
-const BUILD='2026-09-17-1939';
+const BUILD='2026-09-17-2100';
 const WS_DEFAULTS={
   name:'', owners:[], allowedDomain:'', idleHours:8,
   checkins:{enabled:true, stalled:true},       /* weekly check-ins on active projects; a missing one counts as stalled */
@@ -5305,7 +5305,7 @@ function AgentPanel({onClose, about}){
       let answer='';
       if(store.mode!=='cloud'){ answer='(Local mode: the model is not called. The snapshot has '+snap.counts.people+' people and '+snap.counts.activeProjects+' active projects, '+text.length.toLocaleString()+' characters of context.)'; }
       else {
-        const fn=firebase.functions? firebase.functions().httpsCallable('askCirri') : null; if(!fn) throw new Error('The agent function is not deployed yet.');
+        const fn=firebase.functions? firebase.functions().httpsCallable('askCirri',{timeout:300000}) : null; if(!fn) throw new Error('The agent function is not deployed yet.');
         const r=await fn({question, context:text, system:agentSystemFor(g.state.meta), provider:cfg.provider||'openai', model:modelUsed, examples, turns}); answer=(r.data&&r.data.answer)||'';
       }
       store.writeEntity('takes', Object.assign({}, base, {answer, status:'answered', answeredAt:nowISO()})); setQ('');
@@ -5322,7 +5322,7 @@ function AgentPanel({onClose, about}){
       const instruction='Your previous answer to this question was:\n\n'+String(t.answer||'')+'\n\nThe leader\u2019s feedback on it: '+note+'\n\nWrite the answer again from the state, applying that feedback fully. Keep what was right. Same format rules.';
       let revised='';
       if(store.mode!=='cloud') revised='(Local mode: the model is not called. In cloud mode Cirri rewrites its answer here, applying: \u201c'+note+'\u201d)';
-      else { const fn=firebase.functions().httpsCallable('askCirri'); const r=await fn({question:t.question+'\n\n'+instruction, context:text, system:agentSystemFor(g.state.meta), provider:cfg.provider||'openai', model:t.model||cfg.model||''}); revised=(r.data&&r.data.answer)||''; }
+      else { const fn=firebase.functions().httpsCallable('askCirri',{timeout:300000}); const r=await fn({question:t.question+'\n\n'+instruction, context:text, system:agentSystemFor(g.state.meta), provider:cfg.provider||'openai', model:t.model||cfg.model||''}); revised=(r.data&&r.data.answer)||''; }
       setEditing({id:t.id,text:revised,proposed:true});
     }catch(e){ setErr(String(e.message||e)); }
     setRevising(Object.assign({},revising,{[t.id]:false})); };
@@ -12104,7 +12104,7 @@ function SettingsAgentLearn(){
   const [paste,setPaste]=useState(''); const [msg,setMsg]=useState(''); const [drafting,setDrafting]=useState(false); const [err,setErr]=useState('');
   const bundle=()=>agentBundle(meta, items, nameOf);
   const copy=async()=>{ try{ await navigator.clipboard.writeText(bundle()); setMsg('Copied. Paste it to Claude, ChatGPT, or use Draft with Cirri.'); }catch(e){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([bundle()],{type:'text/plain'})); a.download='cirri-learning-bundle-'+todayStr()+'.txt'; a.click(); setMsg('Downloaded.'); } setTimeout(()=>setMsg(''),4000); };
-  const draft=async()=>{ setDrafting(true); setErr(''); try{ if(store.mode!=='cloud') throw new Error('Drafting needs the live workspace.'); const fn=firebase.functions().httpsCallable('askCirri'); const r=await fn({question:'Revise the instructions as the bundle asks. Reply in exactly the format given.', context:bundle(), system:'You are an expert at writing instructions for AI assistants that advise executives. Be precise, general, and brief. Reply only in the requested format.', provider:cfg.provider||'openai', model:cfg.model||''}); setPaste((r.data&&r.data.answer)||''); }catch(e){ setErr(String(e.message||e)); } setDrafting(false); };
+  const draft=async()=>{ setDrafting(true); setErr(''); try{ if(store.mode!=='cloud') throw new Error('Drafting needs the live workspace.'); const fn=firebase.functions().httpsCallable('askCirri',{timeout:300000}); const r=await fn({question:'Revise the instructions as the bundle asks. Reply in exactly the format given.', context:bundle(), system:'You are an expert at writing instructions for AI assistants that advise executives. Be precise, general, and brief. Reply only in the requested format.', provider:cfg.provider||'openai', model:cfg.model||''}); setPaste((r.data&&r.data.answer)||''); }catch(e){ setErr(String(e.message||e)); } setDrafting(false); };
   const parsed=parseRevision(paste);
   const apply=()=>{ if(!parsed) return; const rev={id:uid('rev'), at:nowISO(), by:String((store.user&&store.user.email)||'').toLowerCase(), summary:parsed.summary.slice(0,600), rules:parsed.rules.length, foundationChars:parsed.foundation.length, feedbackCovered:items.length, previousFoundation:agentFoundation(meta), previousRules:agentRules(meta)};
     g.writeMeta({workspace:Object.assign({}, meta.workspace||{}, {agent:Object.assign({}, cfg, {foundation:parsed.foundation, rules:parsed.rules, collatedThrough:nowISO(), revisions:(cfg.revisions||[]).concat([rev])})})}); setPaste(''); setMsg('Applied. Every answer and brief now uses revision '+((cfg.revisions||[]).length+1)+'.'); setTimeout(()=>setMsg(''),5000); };
